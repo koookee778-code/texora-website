@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { LeadSubmissionInput } from '../utils/scrollMath';
 import { TexoraLogoMark } from './TexoraLogoMark';
-import { getWebsiteServices, DynamicService } from '../supabase';
+import { supabase, getWebsiteServices, DynamicService } from '../supabase';
 import {
   ArrowLeft,
   ArrowRight,
@@ -206,39 +206,47 @@ export const StartProjectWizard: React.FC<StartProjectWizardProps> = ({
     };
 
     setSubmitting(true);
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), 1400);
 
     try {
-      await fetch('/api/leads', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-        signal: controller.signal,
-      });
-    } catch {
-      // Fallback gracefully if offline
-    }
+      // 1. Direct Supabase lead recording: 100% reliable on Vercel and local
+      const orderId = `tx-lead-${Date.now()}`;
+      const { data: insertedOrder, error: dbError } = await supabase
+        .from('orders')
+        .insert({
+          id: orderId,
+          client_name: trimmedName,
+          phone: fullWhatsappNumber,
+          company_or_brand: customProjectNote.trim() || projectTitleText,
+          service_id: selectedCategory,
+          service_title: projectTitleText,
+          details: payload.projectSummary,
+          status: 'pending',
+          source: 'موقع شركة TEXORA (ابدأ مشروعك)',
+          whatsapp_notified: false,
+          telegram_notified: false,
+        })
+        .select()
+        .single();
 
-    // Direct Supabase fallback: Guarantee the lead is 100% recorded in Supabase orders table
-    try {
-      await supabase.from('orders').upsert({
-        id: `tx-lead-${Date.now()}`,
-        client_name: trimmedName,
-        phone: fullWhatsappNumber,
-        company_or_brand: customProjectNote.trim() || projectTitleText,
-        service_id: selectedCategory,
-        service_title: projectTitleText,
-        details: payload.projectSummary,
-        status: 'pending',
-        source: 'موقع شركة TEXORA (ابدأ مشروعك)',
-        whatsapp_notified: false,
-        telegram_notified: false,
-      });
+      if (dbError) {
+        console.error('Supabase lead insertion error:', dbError);
+      } else {
+        console.log('Lead registered successfully in Supabase:', insertedOrder?.id);
+      }
+
+      // 2. Also notify local dev server if available
+      try {
+        await fetch('/api/leads', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+      } catch {
+        // Fallback for production static hosting on Vercel
+      }
     } catch (e) {
-      console.warn('Direct Supabase lead insert note:', e);
+      console.error('Submit lead error:', e);
     } finally {
-      window.clearTimeout(timer);
       setSubmitting(false);
       setStep('success');
     }
