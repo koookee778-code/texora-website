@@ -1,0 +1,46 @@
+[
+  {
+    "id": "tx-lead-1794234950881",
+    "clientName": "أحمد محمود كمال",
+    "whatsappPhone": "+201012345678",
+    "companyOrBrand": "وكالة النجوم للدعاية",
+    "systemCategory": "srv_1794234931500_foh3",
+    "projectSummary": "أريد تصميم بوسترات سوشيال ميديا وبانرات شهرية للبراند الخاص بنا.",
+    "aiBotQualification": "أهلاً بك في TEXORA! بخصوص أنظمة الصيدليات والمحلات والبراندات (Pharma & Retail ERP/POS): نقدم لك نظاماً سحابياً متكاملاً يشمل نقاط البيع السريعة (POS)، إدارة المخزون وتواريخ الصلاحية والباركود، الفاتورة الإلكترونية، ومتجر إلكتروني مربوط ببوت واتساب يستقبل طلبات العملاء والروشتات تلقائياً 24/7. مدة التنفيذ والتخصيص: 10 إلى 18 يوماً.",
+    "estimatedArchitecture": "Cloudflare Pages + Supabase Realtime DB + Vercel WhatsApp Cloud API",
+    "createdAt": "2026-11-09T14:35:50.881Z"
+  },
+  {
+    "id": "tx-lead-1794224216634",
+    "clientName": "د. محمد العتيبي",
+    "whatsappPhone": "+966551234567",
+    "companyOrBrand": "نظام محلات كامل (صيدليات · متاجر · براندات)",
+    "systemCategory": "pharmacy-retail-erp",
+    "projectSummary": "طلب تنفيذ: نظام محلات كامل (صيدليات · متاجر · براندات)",
+    "aiBotQualification": "أهلاً بك في TEXORA! بخصوص أنظمة الصيدليات والمحلات والبراندات (Pharma & Retail ERP/POS): نقدم لك نظاماً سحابياً متكاملاً يشمل نقاط البيع السريعة (POS)، إدارة المخزون وتواريخ الصلاحية والباركود، الفاتورة الإلكترونية، ومتجر إلكتروني مربوط ببوت واتساب يستقبل طلبات العملاء والروشتات تلقائياً 24/7. مدة التنفيذ والتخصيص: 10 إلى 18 يوماً.",
+    "estimatedArchitecture": "Cloudflare Pages + Supabase Realtime DB + Vercel WhatsApp Cloud API",
+    "createdAt": "2026-11-09T11:36:56.634Z"
+  },
+  {
+    "id": "tx-lead-101",
+    "clientName": "د. أحمد المنصور",
+    "whatsappPhone": "+201098451200",
+    "companyOrBrand": "مجموعة صيدليات النور (14 فرعاً)",
+    "systemCategory": "pharmacy-retail-erp",
+    "projectSummary": "ربط الفروع الـ 14 بنظام مخزون لحظي وتنبيهات صلاحية الأدوية مع بوت واتساب لطلبات الروشتات.",
+    "aiBotQualification": "تم التأهيل تلقائياً عبر بوت واتساب: باقة PharmaCore Enterprise + ربط Cloudflare Edge وقاعدة بيانات Supabase.",
+    "estimatedArchitecture": "Cloudflare Pages + Supabase PostgreSQL + Vercel WhatsApp Cloud Webhook",
+    "createdAt": "2026-11-08T18:30:00Z"
+  },
+  {
+    "id": "tx-lead-102",
+    "clientName": "أ. سارة الكيلاني",
+    "whatsappPhone": "+966554128900",
+    "companyOrBrand": "أكاديمية رواد المستقبل التعليمية",
+    "systemCategory": "edtech-lms",
+    "projectSummary": "منصة تعليمية تفاعلية لبث المحاضرات المباشرة وبنوك الأسئلة الذكية لـ 25,000 طالب.",
+    "aiBotQualification": "تم التأهيل تلقائياً عبر بوت واتساب: منصة EduVerse LMS مع حماية الفيديو وتطبيق ويب تقدمي.",
+    "estimatedArchitecture": "React + Cloudflare Stream + Supabase Auth & Realtime + Vercel AI Tutor Bot",
+    "createdAt": "2026-11-08T21:15:00Z"
+  }
+]

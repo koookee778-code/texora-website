@@ -1,0 +1,6 @@
+{
+  "name": "TEXORA — Enterprise Software, Digital Systems & AI Solutions",
+  "description": "منصة وشركة TEXORA لتطوير المواقع، المنصات التعليمية، أنظمة الصيدليات والمتاجر، التسويق الإلكتروني، وحلول البوت الذكي عبر واتساب.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

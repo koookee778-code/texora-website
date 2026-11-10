@@ -1,0 +1,21 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  html {
+    font-family: 'Cairo', 'Plus Jakarta Sans', sans-serif;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #050507;
+    color: #F4F5F8;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+.cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 700px;
+}
