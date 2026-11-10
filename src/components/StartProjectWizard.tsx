@@ -210,10 +210,12 @@ export const StartProjectWizard: React.FC<StartProjectWizardProps> = ({
     try {
       // 1. Direct Supabase lead recording: 100% reliable on Vercel and local
       const orderId = `tx-lead-${Date.now()}`;
+      const generatedOrderCode = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
       const { data: insertedOrder, error: dbError } = await supabase
         .from('orders')
         .insert({
           id: orderId,
+          order_code: generatedOrderCode,
           client_name: trimmedName,
           phone: fullWhatsappNumber,
           company_or_brand: customProjectNote.trim() || projectTitleText,
