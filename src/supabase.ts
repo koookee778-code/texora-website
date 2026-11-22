@@ -15,6 +15,9 @@ export interface DynamicService {
   icon?: string;
   active?: boolean;
   sort_order?: number;
+  base_price?: number | null;
+  currency?: string;
+  is_custom_quote?: boolean;
 }
 
 /**
@@ -34,6 +37,52 @@ export async function getWebsiteServices(): Promise<DynamicService[]> {
     console.warn('Failed to load services from Supabase, falling back to local defaults:', err);
   }
   return [];
+}
+
+export interface WebsitePromotion {
+  id: string;
+  title_ar: string;
+  title_en: string;
+  discount_percentage: number;
+  code?: string;
+  description_ar: string;
+  description_en: string;
+  badge_text_ar?: string;
+  badge_text_en?: string;
+  theme?: 'red-classic' | 'red-neon' | 'blue-neon' | 'sky-blue' | 'dark-obsidian' | 'purple-cyber' | 'silver' | 'silver-metallic';
+  is_global?: boolean;
+  applicable_services?: string[] | null;
+  active: boolean;
+  starts_at: string;
+  expires_at: string;
+}
+
+/**
+ * Fetch active promotion from Supabase.
+ * Returns null if no active promotion or if duration has expired.
+ */
+export async function getActivePromotion(): Promise<WebsitePromotion | null> {
+  try {
+    const { data, error } = await supabase
+      .from('promotions')
+      .select('*')
+      .eq('active', true)
+      .order('created_at', { ascending: false })
+      .limit(1);
+
+    if (error) throw error;
+    if (data && data.length > 0) {
+      const promo = data[0] as WebsitePromotion;
+      const now = Date.now();
+      const expiry = new Date(promo.expires_at).getTime();
+      if (expiry > now) {
+        return promo;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to load active promotion from Supabase:', err);
+  }
+  return null;
 }
 
 /**

@@ -62,8 +62,8 @@ export function computeLogoChoreography(rawProgress: number): LogoTransformState
   // Continuous, unhurried S-curve keyframes without flat freezes:
   // [p, x, y, z, rotX, rotY, rotZ, scale]
   const keyframes: Array<[number, number, number, number, number, number, number, number]> = [
-    // 0: Hero Upper-Center Showcase (calmly poised above Hero headline)
-    [0.00, 0.0, 1.32, 0.25, 0.02, 0.0, 0.0, 0.52],
+    // 0: Hero Center Showcase (lowered comfortably below the top navigation bar and announcement bar)
+    [0.00, 0.0, 0.75, 0.25, 0.02, 0.0, 0.0, 0.52],
     // 1: Smooth S-curve glide to the Left open lane (opposite Pillar 01 Right card)
     [0.17, -2.25, 0.05, 0.20, 0.06, 0.22, 0.04, 0.66],
     // 2: Smooth S-curve glide to the Right open lane (opposite Pillar 02 Left card)

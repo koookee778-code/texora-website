@@ -6,7 +6,8 @@ import { TexoraLogoMark } from './components/TexoraLogoMark';
 import { TypewriterTitle } from './components/TypewriterTitle';
 import { WhiteStageReveal } from './components/WhiteStageReveal';
 import { StartProjectWizard } from './components/StartProjectWizard';
-import { logPageVisit } from './supabase';
+import { logPageVisit, getActivePromotion, WebsitePromotion } from './supabase';
+import { BigRedDiscountModal } from './components/BigRedDiscountModal';
 import { ArrowDown, ArrowUpLeft, ArrowUpRight, Globe2, Menu, X } from 'lucide-react';
 
 // Lazy-load below-the-fold sections so weak devices don't load everything at once
@@ -19,6 +20,9 @@ const WhatsAppBotHub = lazy(() =>
 const ContactAndTermsSection = lazy(() =>
   import('./components/ContactAndTermsSection').then((m) => ({ default: m.ContactAndTermsSection }))
 );
+const SEOContentSection = lazy(() =>
+  import('./components/SEOContentSection').then((m) => ({ default: m.SEOContentSection }))
+);
 
 const PILLAR_CATEGORY_MAP: Record<string, LeadSubmissionInput['systemCategory']> = {
   'web-platforms': 'web-platform',
@@ -27,9 +31,66 @@ const PILLAR_CATEGORY_MAP: Record<string, LeadSubmissionInput['systemCategory']>
   'pharmacy-retail-erp': 'pharmacy-retail-erp',
 };
 
+const getTopBarThemeStyles = (theme?: string) => {
+  switch (theme) {
+    case 'blue-neon':
+      return {
+        barBg: 'bg-gradient-to-r from-blue-950/95 via-[#0A1938] to-blue-950/95 border-b border-blue-500/35',
+        badgeBg: 'bg-blue-600 text-white shadow-blue-500/50',
+        textColor: 'text-blue-100',
+        btnText: 'text-cyan-300 hover:text-white',
+      };
+    case 'red-neon':
+      return {
+        barBg: 'bg-gradient-to-r from-red-950/95 via-[#2A060C] to-red-950/95 border-b border-red-500/35',
+        badgeBg: 'bg-red-600 text-white shadow-red-500/50',
+        textColor: 'text-red-100',
+        btnText: 'text-red-300 hover:text-white',
+      };
+    case 'sky-blue':
+      return {
+        barBg: 'bg-gradient-to-r from-cyan-950/95 via-[#082C3D] to-cyan-950/95 border-b border-cyan-400/35',
+        badgeBg: 'bg-cyan-500 text-neutral-950 shadow-cyan-400/50',
+        textColor: 'text-cyan-100',
+        btnText: 'text-cyan-300 hover:text-white',
+      };
+    case 'dark-obsidian':
+      return {
+        barBg: 'bg-gradient-to-r from-neutral-950/95 via-[#18181C] to-neutral-950/95 border-b border-amber-400/35',
+        badgeBg: 'bg-amber-400 text-neutral-950 shadow-amber-400/50',
+        textColor: 'text-amber-100',
+        btnText: 'text-amber-300 hover:text-white',
+      };
+    case 'purple-cyber':
+      return {
+        barBg: 'bg-gradient-to-r from-purple-950/95 via-[#220736] to-purple-950/95 border-b border-fuchsia-500/35',
+        badgeBg: 'bg-fuchsia-600 text-white shadow-fuchsia-500/50',
+        textColor: 'text-fuchsia-100',
+        btnText: 'text-fuchsia-300 hover:text-white',
+      };
+    case 'silver':
+    case 'silver-metallic':
+      return {
+        barBg: 'bg-gradient-to-r from-[#181B22]/95 via-[#2E3440] to-[#181B22]/95 border-b border-slate-300/40',
+        badgeBg: 'bg-gradient-to-r from-slate-200 via-white to-slate-200 text-slate-950 shadow-slate-300/50 font-black',
+        textColor: 'text-slate-100',
+        btnText: 'text-white hover:text-slate-200 underline font-bold',
+      };
+    case 'red-classic':
+    default:
+      return {
+        barBg: 'bg-gradient-to-r from-[#8A050B]/95 via-[#A80810] to-[#8A050B]/95 border-b border-yellow-400/40',
+        badgeBg: 'bg-yellow-400 text-black shadow-yellow-400/50',
+        textColor: 'text-yellow-100',
+        btnText: 'text-yellow-300 hover:text-white',
+      };
+  }
+};
+
 export default function App() {
   const [lang, setLang] = useState<'ar' | 'en'>('ar');
   const [activePage, setActivePage] = useState<'home' | 'start-project'>('home');
+  const [activePromo, setActivePromo] = useState<WebsitePromotion | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [isInsideScrollTrack, setIsInsideScrollTrack] = useState<boolean>(true);
   const [whiteStageBlend, setWhiteStageBlend] = useState<number>(0);
@@ -58,6 +119,13 @@ export default function App() {
     logPageVisit(activePage === 'home' ? '/' : '/start-project');
   }, [activePage]);
 
+  // Fetch active promotional campaign from Supabase
+  useEffect(() => {
+    getActivePromotion().then((promo) => {
+      setActivePromo(promo);
+    });
+  }, []);
+
   useEffect(() => {
     if (activePage !== 'home') return;
 
@@ -80,11 +148,10 @@ export default function App() {
       ticking = false;
       const raw = computeCurrentProgress();
 
-      // Smoothly fade out Hero text as the user scrolls down so the descending 3D logo NEVER overlaps Hero text
+      // Hero text, dual CTA buttons, and proof stats remain fully visible and scroll naturally
       if (heroContentRef.current) {
-        const heroFade = Math.max(0, Math.min(1, 1 - raw / 0.055));
-        heroContentRef.current.style.opacity = String(heroFade);
-        heroContentRef.current.style.pointerEvents = heroFade < 0.15 ? 'none' : 'auto';
+        heroContentRef.current.style.opacity = '1';
+        heroContentRef.current.style.pointerEvents = 'auto';
       }
 
       if (raw <= 1) {
@@ -166,6 +233,7 @@ export default function App() {
         lang={lang}
         initialCategory={preselectedCategory}
         initialProjectTitle={preselectedProjectTitle}
+        activePromo={activePromo}
         onBackToHome={() => {
           setActivePage('home');
           window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
@@ -201,114 +269,77 @@ export default function App() {
       data-stage-index={stageIndex}
       data-logo-docked={isLogoDocked ? 'true' : 'false'}
     >
-      {/* MINIMALIST FLOATING GLASS HEADER (Hidden completely on White Stage) */}
-      <header
+      {/* MINIMALIST FLOATING GLASS HEADER + GRAND OPENING ANNOUNCEMENT (Hidden completely on White Stage) */}
+      <div
         style={{
           opacity: hideHeaderOnWhiteStage ? 0 : 1,
           pointerEvents: hideHeaderOnWhiteStage ? 'none' : 'auto',
         }}
-        className={`fixed top-0 inset-x-0 z-40 flex items-center justify-between gap-8 px-6 sm:px-10 py-4 bg-[#050507]/80 backdrop-blur-xl border-b border-white/[0.07] text-white transition-opacity duration-300 ${
+        className={`fixed top-0 inset-x-0 z-40 transition-opacity duration-300 ${
           hideHeaderOnWhiteStage ? 'invisible' : 'visible'
         }`}
       >
-        <a
-          href="#top"
-          onClick={(e) => {
-            e.preventDefault();
-            scrollToTrackFraction(0);
-          }}
-          className="text-lg font-['Outfit'] font-black tracking-tight whitespace-nowrap shrink-0"
-        >
-          TEXORA
-        </a>
+        {/* DYNAMIC TOP ANNOUNCEMENT BAR (Rendered only when an active promotion is running) */}
+        {activePromo && (() => {
+          const topTheme = getTopBarThemeStyles(activePromo.theme);
+          return (
+            <div className={`${topTheme.barBg} py-2 px-4 text-center text-xs backdrop-blur-md transition-colors duration-300`}>
+              <div className="max-w-6xl mx-auto flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+                <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold ${topTheme.badgeBg} uppercase tracking-wider shadow-sm`}>
+                  {lang === 'ar' ? (activePromo.badge_text_ar || '🎉 عرض رسمي') : (activePromo.badge_text_en || '🎉 Special Offer')}
+                </span>
+                <span className={`font-semibold ${topTheme.textColor}`}>
+                  {lang === 'ar'
+                    ? `خصم ${activePromo.discount_percentage}% لفترة محدودة على كافة مشاريع وأنظمة وتطبيقات TEXORA`
+                    : `${activePromo.discount_percentage}% Limited Discount on all TEXORA systems & platforms`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => openStartProjectPage()}
+                  className={`inline-flex items-center gap-1 font-bold ${topTheme.btnText} underline underline-offset-4 cursor-pointer transition-colors`}
+                >
+                  <span>{lang === 'ar' ? `احجز مشروعك بالخصم (${activePromo.discount_percentage}%) ←` : `Claim ${activePromo.discount_percentage}% Off →`}</span>
+                </button>
+              </div>
+            </div>
+          );
+        })()}
 
-        <nav
-          aria-label={lang === 'ar' ? 'التنقل الرئيسي' : 'Primary Navigation'}
-          className="hidden md:flex items-center gap-8 text-xs font-medium text-[#8A8F98]"
-        >
+        {/* MAIN NAVIGATION HEADER */}
+        <header className="flex items-center justify-between gap-8 px-6 sm:px-10 py-3.5 bg-[#050507]/85 backdrop-blur-xl border-b border-white/[0.07] text-white">
           <a
-            href="#pillars"
+            href="#top"
             onClick={(e) => {
               e.preventDefault();
-              scrollToTrackFraction(0.16);
+              scrollToTrackFraction(0);
             }}
-            className="hover:text-white transition-colors whitespace-nowrap shrink-0"
+            className="text-lg font-['Outfit'] font-black tracking-tight whitespace-nowrap shrink-0"
           >
-            {lang === 'ar' ? 'الحلول والأنظمة' : 'Solutions'}
+            TEXORA
           </a>
-          <a
-            href="#projects"
-            onClick={(e) => {
-              e.preventDefault();
-              scrollToElementId('projects');
-            }}
-            className="hover:text-white transition-colors whitespace-nowrap shrink-0"
-          >
-            {lang === 'ar' ? 'الأعمال' : 'Works'}
-          </a>
-          <a
-            href="#whatsapp-bot"
-            onClick={(e) => {
-              e.preventDefault();
-              scrollToElementId('whatsapp-bot');
-            }}
-            className="hover:text-white transition-colors whitespace-nowrap shrink-0"
-          >
-            {lang === 'ar' ? 'بوت واتساب' : 'WhatsApp AI'}
-          </a>
-          <a
-            href="#terms"
-            onClick={(e) => {
-              e.preventDefault();
-              scrollToElementId('terms');
-            }}
-            className="hover:text-white transition-colors whitespace-nowrap shrink-0"
-          >
-            {lang === 'ar' ? 'الشروط والأحكام' : 'Terms'}
-          </a>
-        </nav>
 
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <button
-            type="button"
-            onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#8A8F98] hover:text-white bg-white/[0.03] border border-white/[0.08] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+          <nav
+            aria-label={lang === 'ar' ? 'التنقل الرئيسي' : 'Primary Navigation'}
+            className="hidden md:flex items-center gap-8 text-xs font-medium text-[#8A8F98]"
           >
-            <Globe2 className="w-3.5 h-3.5" />
-            <span>{lang === 'ar' ? 'EN' : 'عربي'}</span>
-          </button>
-
-          <button
-            type="button"
-            data-testid="header-start-project-btn"
-            onClick={() => openStartProjectPage()}
-            className="px-3.5 sm:px-4 py-1.5 text-xs font-semibold text-[#050507] bg-white hover:bg-neutral-200 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-          >
-            {lang === 'ar' ? 'ابدأ مشروعك' : 'Start Project'}
-          </button>
-
-          {/* Mobile Navigation Toggle Button */}
-          <button
-            type="button"
-            aria-label={lang === 'ar' ? 'قائمة التنقل' : 'Navigation Menu'}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-1.5 text-[#8A8F98] hover:text-white bg-white/[0.03] border border-white/[0.08] rounded-lg transition-colors cursor-pointer"
-          >
-            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-          </button>
-        </div>
-
-        {/* Mobile Dropdown Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden absolute top-full inset-x-0 bg-[#050507]/95 backdrop-blur-2xl border-b border-white/[0.08] py-4 px-6 flex flex-col gap-4 text-sm font-medium text-neutral-300">
+            <a
+              href="#saudi-business"
+              onClick={(e) => {
+                e.preventDefault();
+                scrollToElementId('saudi-business');
+              }}
+              className="text-white hover:text-emerald-400 transition-colors whitespace-nowrap shrink-0 font-semibold flex items-center gap-1.5"
+            >
+              <span>🇸🇦</span>
+              <span>{lang === 'ar' ? 'إنشاء موقع عمل سعودي' : 'Saudi Business Web'}</span>
+            </a>
             <a
               href="#pillars"
               onClick={(e) => {
                 e.preventDefault();
-                setMobileMenuOpen(false);
                 scrollToTrackFraction(0.16);
               }}
-              className="py-1 hover:text-white transition-colors"
+              className="hover:text-white transition-colors whitespace-nowrap shrink-0"
             >
               {lang === 'ar' ? 'الحلول والأنظمة' : 'Solutions'}
             </a>
@@ -316,10 +347,9 @@ export default function App() {
               href="#projects"
               onClick={(e) => {
                 e.preventDefault();
-                setMobileMenuOpen(false);
                 scrollToElementId('projects');
               }}
-              className="py-1 hover:text-white transition-colors"
+              className="hover:text-white transition-colors whitespace-nowrap shrink-0"
             >
               {lang === 'ar' ? 'الأعمال' : 'Works'}
             </a>
@@ -327,10 +357,9 @@ export default function App() {
               href="#whatsapp-bot"
               onClick={(e) => {
                 e.preventDefault();
-                setMobileMenuOpen(false);
                 scrollToElementId('whatsapp-bot');
               }}
-              className="py-1 hover:text-white transition-colors"
+              className="hover:text-white transition-colors whitespace-nowrap shrink-0"
             >
               {lang === 'ar' ? 'بوت واتساب' : 'WhatsApp AI'}
             </a>
@@ -338,16 +367,107 @@ export default function App() {
               href="#terms"
               onClick={(e) => {
                 e.preventDefault();
-                setMobileMenuOpen(false);
                 scrollToElementId('terms');
               }}
-              className="py-1 hover:text-white transition-colors"
+              className="hover:text-white transition-colors whitespace-nowrap shrink-0"
             >
               {lang === 'ar' ? 'الشروط والأحكام' : 'Terms'}
             </a>
+          </nav>
+
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-[#8A8F98] hover:text-white bg-white/[0.03] border border-white/[0.08] rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              <Globe2 className="w-3.5 h-3.5" />
+              <span>{lang === 'ar' ? 'EN' : 'عربي'}</span>
+            </button>
+
+            <button
+              type="button"
+              data-testid="header-start-project-btn"
+              onClick={() => openStartProjectPage()}
+              className="px-3.5 sm:px-4 py-1.5 text-xs font-semibold text-[#050507] bg-white hover:bg-neutral-200 rounded-lg transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            >
+              {lang === 'ar' ? 'ابدأ مشروعك' : 'Start Project'}
+            </button>
+
+            {/* Mobile Navigation Toggle Button */}
+            <button
+              type="button"
+              aria-label={lang === 'ar' ? 'قائمة التنقل' : 'Navigation Menu'}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-1.5 text-[#8A8F98] hover:text-white bg-white/[0.03] border border-white/[0.08] rounded-lg transition-colors cursor-pointer"
+            >
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
           </div>
-        )}
-      </header>
+
+          {/* Mobile Dropdown Menu */}
+          {mobileMenuOpen && (
+            <div className="md:hidden absolute top-full inset-x-0 bg-[#050507]/95 backdrop-blur-2xl border-b border-white/[0.08] py-4 px-6 flex flex-col gap-4 text-sm font-medium text-neutral-300">
+              <a
+                href="#saudi-business"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMobileMenuOpen(false);
+                  scrollToElementId('saudi-business');
+                }}
+                className="py-1 text-emerald-400 font-semibold hover:text-white transition-colors flex items-center gap-2"
+              >
+                <span>🇸🇦</span>
+                <span>{lang === 'ar' ? 'إنشاء موقع عمل سعودي' : 'Saudi Business Web'}</span>
+              </a>
+              <a
+                href="#pillars"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMobileMenuOpen(false);
+                  scrollToTrackFraction(0.16);
+                }}
+                className="py-1 hover:text-white transition-colors"
+              >
+                {lang === 'ar' ? 'الحلول والأنظمة' : 'Solutions'}
+              </a>
+              <a
+                href="#projects"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMobileMenuOpen(false);
+                  scrollToElementId('projects');
+                }}
+                className="py-1 hover:text-white transition-colors"
+              >
+                {lang === 'ar' ? 'الأعمال' : 'Works'}
+              </a>
+              <a
+                href="#whatsapp-bot"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMobileMenuOpen(false);
+                  scrollToElementId('whatsapp-bot');
+                }}
+                className="py-1 hover:text-white transition-colors"
+              >
+                {lang === 'ar' ? 'بوت واتساب' : 'WhatsApp AI'}
+              </a>
+              <a
+                href="#terms"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setMobileMenuOpen(false);
+                  scrollToElementId('terms');
+                }}
+                className="py-1 hover:text-white transition-colors"
+              >
+                {lang === 'ar' ? 'الشروط والأحكام' : 'Terms'}
+              </a>
+            </div>
+          )}
+        </header>
+      </div>
 
       <main id="top">
         {/* =====================================================================
@@ -379,7 +499,7 @@ export default function App() {
           {/* STAGE 0: MINIMALIST BIG-TECH HERO VIEWPORT */}
           <section
             aria-label={lang === 'ar' ? 'واجهة TEXORA الرئيسية' : 'TEXORA Hero Stage'}
-            className="relative z-20 min-h-screen flex flex-col justify-between pt-20 pb-12 px-4 sm:px-8 max-w-6xl mx-auto"
+            className="relative z-20 min-h-screen flex flex-col justify-between pt-28 pb-12 px-4 sm:px-8 max-w-6xl mx-auto"
           >
             {/* Dedicated Clear Zone for the Centered 3D Logo at scroll = 0 */}
             <div
@@ -394,6 +514,18 @@ export default function App() {
               className="flex flex-col justify-between flex-1 transition-opacity duration-150"
             >
               <div className="flex flex-col items-center text-center px-4">
+                {/* DYNAMIC PROMOTION SPECIAL OFFER PILL (Rendered only when active promo is running) */}
+                {activePromo && (
+                  <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r from-red-500/15 via-rose-500/20 to-red-500/15 border border-red-500/40 text-red-300 text-xs font-semibold mb-6 shadow-sm shadow-red-500/20">
+                    <span className="w-2 h-2 rounded-full bg-red-400 animate-ping" />
+                    <span>
+                      {lang === 'ar'
+                        ? `🎁 ${activePromo.title_ar}: خصم ${activePromo.discount_percentage}% سارٍ لفترة محدودة`
+                        : `🎁 ${activePromo.title_en}: ${activePromo.discount_percentage}% Discount Active`}
+                    </span>
+                  </div>
+                )}
+
                 <h1
                   className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white max-w-3xl leading-[1.15]"
                   style={{ textWrap: 'balance' }}
@@ -592,6 +724,13 @@ export default function App() {
           </div>
 
           <div className="cv-auto">
+            <SEOContentSection
+              lang={lang}
+              onOpenStartProject={() => openStartProjectPage()}
+            />
+          </div>
+
+          <div className="cv-auto">
             <ContactAndTermsSection
               lang={lang}
               onOpenStartProject={() => openStartProjectPage()}
@@ -621,6 +760,9 @@ export default function App() {
             <a href="#whatsapp-bot" className="hover:text-white transition-colors">
               {lang === 'ar' ? 'بوت واتساب' : 'WhatsApp AI'}
             </a>
+            <a href="#knowledge-base" className="hover:text-white transition-colors">
+              {lang === 'ar' ? 'الأسئلة والخدمات' : 'FAQs & Guide'}
+            </a>
             <button
               type="button"
               onClick={() => openStartProjectPage()}
@@ -634,6 +776,13 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* BIG RED PROMOTIONAL ENTRANCE MODAL & FLOATING BADGE */}
+      <BigRedDiscountModal
+        promo={activePromo}
+        lang={lang}
+        onClaimDiscount={() => openStartProjectPage()}
+      />
     </div>
   );
 }

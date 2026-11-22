@@ -1,22 +1,34 @@
 import React, { useEffect, useState } from 'react';
 import { LeadSubmissionInput } from '../utils/scrollMath';
 import { TexoraLogoMark } from './TexoraLogoMark';
-import { supabase, getWebsiteServices, DynamicService } from '../supabase';
+import { supabase, getWebsiteServices, DynamicService, WebsitePromotion } from '../supabase';
 import {
   ArrowLeft,
   ArrowRight,
+  BarChart3,
+  Bot,
+  Building2,
   Check,
   CheckCircle2,
   ChevronDown,
+  Code2,
   Cpu,
+  Gift,
   Globe,
   GraduationCap,
   Home,
   Layers,
   Megaphone,
   Palette,
+  Percent,
+  ShieldCheck,
+  Smartphone,
   Sparkles,
+  Stethoscope,
   Store,
+  Truck,
+  UtensilsCrossed,
+  Zap,
 } from 'lucide-react';
 
 export interface CountryDialOption {
@@ -58,6 +70,9 @@ export interface ProjectChoiceItem {
   descAr: string;
   descEn: string;
   icon: React.ComponentType<{ className?: string }>;
+  basePrice?: number | null;
+  currency?: string;
+  isCustomQuote?: boolean;
 }
 
 const DEFAULT_PROJECT_CHOICES: ProjectChoiceItem[] = [
@@ -96,14 +111,45 @@ const DEFAULT_PROJECT_CHOICES: ProjectChoiceItem[] = [
 ];
 
 function resolveServiceIcon(iconName?: string, category?: string, title?: string) {
+  const norm = (iconName || '').trim();
+  // 1. Direct Icon Name Matches
+  if (norm === 'Smartphone' || norm === 'Mobile') return Smartphone;
+  if (norm === 'Bot') return Bot;
+  if (norm === 'ShieldCheck' || norm === 'Security') return ShieldCheck;
+  if (norm === 'Code2' || norm === 'Code') return Code2;
+  if (norm === 'BarChart3' || norm === 'Chart') return BarChart3;
+  if (norm === 'Truck') return Truck;
+  if (norm === 'Building2' || norm === 'Building') return Building2;
+  if (norm === 'Stethoscope') return Stethoscope;
+  if (norm === 'UtensilsCrossed' || norm === 'Restaurant') return UtensilsCrossed;
+  if (norm === 'Zap') return Zap;
+  if (norm === 'Store') return Store;
+  if (norm === 'Globe') return Globe;
+  if (norm === 'GraduationCap') return GraduationCap;
+  if (norm === 'Megaphone') return Megaphone;
+  if (norm === 'Palette') return Palette;
+  if (norm === 'Cpu') return Cpu;
+  if (norm === 'Layers') return Layers;
+
+  // 2. Rich Semantic Keyword Matches
   const key = `${iconName || ''} ${category || ''} ${title || ''}`.toLowerCase();
-  if (key.includes('store') || key.includes('pharmacy') || key.includes('retail') || key.includes('pos') || key.includes('صيدل') || key.includes('محل')) return Store;
+  if (key.includes('phone') || key.includes('mobile') || key.includes('جوال') || key.includes('تطبيق') || key.includes('app') || key.includes('ios') || key.includes('android')) return Smartphone;
+  if (key.includes('bot') || key.includes('شات بوت') || key.includes('واتساب') || key.includes('chat') || key.includes('ذكاء')) return Bot;
+  if (key.includes('shield') || key.includes('أمان') || key.includes('حماية') || key.includes('security')) return ShieldCheck;
+  if (key.includes('code') || key.includes('برمجة') || key.includes('api') || key.includes('تطوير خاص')) return Code2;
+  if (key.includes('chart') || key.includes('حسابات') || key.includes('أرباح') || key.includes('مالية') || key.includes('erp')) return BarChart3;
+  if (key.includes('truck') || key.includes('شحن') || key.includes('توصيل') || key.includes('مندوب')) return Truck;
+  if (key.includes('building') || key.includes('عقار') || key.includes('مقاولات') || key.includes('هندسة')) return Building2;
+  if (key.includes('stetho') || key.includes('طب') || key.includes('صيدل') || key.includes('عياد') || key.includes('مستشفى')) return Stethoscope;
+  if (key.includes('uten') || key.includes('مطعم') || key.includes('كافيه') || key.includes('أكل') || key.includes('food')) return UtensilsCrossed;
+  if (key.includes('store') || key.includes('pharmacy') || key.includes('retail') || key.includes('pos') || key.includes('محل')) return Store;
   if (key.includes('globe') || key.includes('web') || key.includes('site') || key.includes('موقع') || key.includes('3d')) return Globe;
   if (key.includes('grad') || key.includes('edu') || key.includes('lms') || key.includes('school') || key.includes('تعليم') || key.includes('منصة')) return GraduationCap;
   if (key.includes('mega') || key.includes('market') || key.includes('ad') || key.includes('seo') || key.includes('تسويق') || key.includes('إعلان')) return Megaphone;
   if (key.includes('palette') || key.includes('design') || key.includes('image') || key.includes('art') || key.includes('صور') || key.includes('تصميم') || key.includes('جرافيك')) return Palette;
-  if (key.includes('cpu') || key.includes('ai') || key.includes('bot') || key.includes('ذكاء') || key.includes('بوت')) return Cpu;
+  if (key.includes('cpu') || key.includes('ai')) return Cpu;
   if (key.includes('layer') || key.includes('stack') || key.includes('برمجيات')) return Layers;
+  if (key.includes('zap') || key.includes('سرعة') || key.includes('أداء')) return Zap;
   return Sparkles;
 }
 
@@ -111,6 +157,7 @@ interface StartProjectWizardProps {
   lang: 'ar' | 'en';
   initialCategory?: string;
   initialProjectTitle?: string;
+  activePromo?: WebsitePromotion | null;
   onBackToHome: () => void;
 }
 
@@ -118,6 +165,7 @@ export const StartProjectWizard: React.FC<StartProjectWizardProps> = ({
   lang,
   initialCategory,
   initialProjectTitle,
+  activePromo,
   onBackToHome,
 }) => {
   const [step, setStep] = useState<'select-project' | 'contact-info' | 'success'>('select-project');
@@ -144,6 +192,9 @@ export const StartProjectWizard: React.FC<StartProjectWizardProps> = ({
         descAr: srv.description_ar,
         descEn: srv.description_en || srv.description_ar,
         icon: resolveServiceIcon(srv.icon, srv.category, srv.title_ar),
+        basePrice: srv.base_price,
+        currency: srv.currency || 'ج.م',
+        isCustomQuote: srv.is_custom_quote ?? true,
       }));
       setProjectChoices(dynamicList);
     }).catch(() => {});
@@ -210,12 +261,10 @@ export const StartProjectWizard: React.FC<StartProjectWizardProps> = ({
     try {
       // 1. Direct Supabase lead recording: 100% reliable on Vercel and local
       const orderId = `tx-lead-${Date.now()}`;
-      const generatedOrderCode = `ORD-${Math.floor(1000 + Math.random() * 9000)}`;
       const { data: insertedOrder, error: dbError } = await supabase
         .from('orders')
         .insert({
           id: orderId,
-          order_code: generatedOrderCode,
           client_name: trimmedName,
           phone: fullWhatsappNumber,
           company_or_brand: customProjectNote.trim() || projectTitleText,
@@ -283,6 +332,36 @@ export const StartProjectWizard: React.FC<StartProjectWizardProps> = ({
 
       {/* Main Wizard Content */}
       <main className="my-auto py-12 max-w-2xl w-full mx-auto">
+        {/* DYNAMIC PROMOTION BANNER (Only shows when active promo exists and not expired) */}
+        {step !== 'success' && activePromo && (
+          <div className="mb-8 p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-red-600/20 via-rose-600/20 to-red-600/10 border border-red-500/40 flex items-center justify-between gap-4 shadow-lg shadow-red-500/10">
+            <div className="flex items-center gap-3.5">
+              <div className="w-10 h-10 rounded-xl bg-red-500/20 border border-red-400/30 flex items-center justify-center text-red-400 shrink-0">
+                <Percent className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-red-600 text-white uppercase tracking-wider">
+                    {lang === 'ar' ? (activePromo.badge_text_ar || 'عرض خاص') : (activePromo.badge_text_en || 'Special Offer')}
+                  </span>
+                  <span className="text-xs font-semibold text-neutral-300">
+                    {lang === 'ar' ? 'متاح لفترة محدودة ⏳' : 'Limited Time ⏳'}
+                  </span>
+                </div>
+                <p className="mt-1 text-xs sm:text-sm font-bold text-white">
+                  {activePromo.is_global === false && activePromo.applicable_services && activePromo.applicable_services.length > 0
+                    ? (lang === 'ar'
+                        ? `خصم ${activePromo.discount_percentage}% مطبّق تلقائياً على الخدمات المشمولة بالعرض!`
+                        : `${activePromo.discount_percentage}% Discount automatically applied to qualifying services!`)
+                    : (lang === 'ar'
+                        ? `خصم ${activePromo.discount_percentage}% مطبّق تلقائياً ومباشرة على تكلفة تنفيذ مشروعك!`
+                        : `${activePromo.discount_percentage}% Discount automatically applied to your project!`)}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Progress Indicator (for steps 1 & 2) */}
         {step !== 'success' && (
           <div className="flex items-center justify-between gap-4 mb-8 text-xs text-[#8A8F98]">
@@ -384,6 +463,59 @@ export const StartProjectWizard: React.FC<StartProjectWizardProps> = ({
                       <p className="mt-1 text-xs sm:text-sm text-[#8A8F98] leading-relaxed">
                         {lang === 'ar' ? item.descAr : item.descEn}
                       </p>
+
+                      {/* Service Pricing & Strikethrough Discount */}
+                      {item.basePrice && !item.isCustomQuote ? (() => {
+                        const isServiceDiscounted = (() => {
+                          if (!activePromo || !activePromo.discount_percentage) return false;
+                          if (activePromo.is_global !== false) return true; // Global discount applies to all fixed-price services
+                          const targets = activePromo.applicable_services;
+                          if (!Array.isArray(targets) || targets.length === 0) return true;
+                          return targets.some((target) => {
+                            const t = target.toLowerCase().trim();
+                            return (
+                              t === item.id.toLowerCase() ||
+                              t === item.titleAr.toLowerCase() ||
+                              t === item.titleEn.toLowerCase() ||
+                              item.titleAr.includes(target) ||
+                              item.descAr.includes(target) ||
+                              target.includes(item.id)
+                            );
+                          });
+                        })();
+
+                        const discountPercent = isServiceDiscounted ? (activePromo?.discount_percentage || 0) : 0;
+                        const discountedPrice = discountPercent > 0
+                          ? Math.round(item.basePrice * (1 - discountPercent / 100))
+                          : item.basePrice;
+
+                        return (
+                          <div className="mt-2.5 flex items-center gap-2 flex-wrap">
+                            {discountPercent > 0 ? (
+                              <>
+                                <span className="text-xs text-neutral-400 line-through decoration-red-400">
+                                  {item.basePrice.toLocaleString()} {item.currency || 'ج.م'}
+                                </span>
+                                <span className="text-sm font-extrabold text-emerald-400">
+                                  {discountedPrice.toLocaleString()} {item.currency || 'ج.م'}
+                                </span>
+                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-red-500/15 text-red-300 border border-red-500/30">
+                                  {lang === 'ar' ? `وفرت ${discountPercent}%` : `Save ${discountPercent}%`}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-xs sm:text-sm font-extrabold text-white">
+                                {item.basePrice.toLocaleString()} {item.currency || 'ج.م'}
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })() : (
+                        <div className="mt-2 text-[11px] text-[#8A8F98]/75 font-medium flex items-center gap-1">
+                          <span>•</span>
+                          <span>{lang === 'ar' ? 'سعر مخصص حسب متطلبات المشروع' : 'Custom Quote based on scope'}</span>
+                        </div>
+                      )}
                     </div>
                   </button>
                 );
